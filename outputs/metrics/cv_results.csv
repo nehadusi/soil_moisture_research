@@ -1,0 +1,43 @@
+masking,features,model,cv,n,MAE,RMSE,R2,spearman
+flag+box+shadow,exposure_normalised,ridge,LOPO,43,3.343,4.183,-0.142,-0.022
+flag+box+shadow,exposure_normalised,ridge,LORO,43,3.571,4.358,-0.24,-0.142
+flag+box+shadow,exposure_normalised,ridge,LODO,43,3.723,4.718,-0.453,-0.478
+flag+box+shadow,exposure_normalised,random_forest,LOPO,43,3.416,3.996,-0.042,0.137
+flag+box+shadow,exposure_normalised,random_forest,LORO,43,3.32,4.063,-0.077,0.124
+flag+box+shadow,exposure_normalised,random_forest,LODO,43,4.123,5.158,-0.737,-0.448
+flag+box+shadow,color+veg,ridge,LOPO,43,3.359,4.039,-0.065,0.112
+flag+box+shadow,color+veg,ridge,LORO,43,3.758,4.52,-0.333,-0.04
+flag+box+shadow,color+veg,ridge,LODO,43,3.722,4.717,-0.452,-0.414
+flag+box+shadow,color+veg,random_forest,LOPO,43,3.252,3.815,0.05,0.237
+flag+box+shadow,color+veg,random_forest,LORO,43,3.259,3.897,0.009,0.182
+flag+box+shadow,color+veg,random_forest,LODO,43,3.675,4.708,-0.447,-0.381
+flag+box+shadow,-,mean_baseline,LOPO,43,3.198,4.008,-0.048,-0.998
+flag+box+shadow,-,mean_baseline,LORO,43,3.262,4.07,-0.081,-0.547
+flag+box+shadow,-,mean_baseline,LODO,43,3.629,4.584,-0.372,-0.334
+flag+box+shadow,all,ridge,LOPO,43,3.288,3.953,-0.02,0.209
+flag+box+shadow,all,ridge,LORO,43,3.931,4.912,-0.575,-0.076
+flag+box+shadow,all,ridge,LODO,43,3.763,4.794,-0.5,-0.426
+flag+box+shadow,all,random_forest,LOPO,43,3.366,3.95,-0.019,0.17
+flag+box+shadow,all,random_forest,LORO,43,3.476,4.208,-0.156,-0.042
+flag+box+shadow,all,random_forest,LODO,43,3.687,4.776,-0.488,-0.399
+flag+box only,exposure_normalised,ridge,LOPO,43,3.261,3.983,-0.036,0.054
+flag+box only,exposure_normalised,ridge,LORO,43,3.295,4.035,-0.063,-0.101
+flag+box only,exposure_normalised,ridge,LODO,43,3.661,4.641,-0.406,-0.308
+flag+box only,exposure_normalised,random_forest,LOPO,43,3.389,3.974,-0.031,0.142
+flag+box only,exposure_normalised,random_forest,LORO,43,3.213,3.924,-0.005,0.203
+flag+box only,exposure_normalised,random_forest,LODO,43,3.998,5.042,-0.659,-0.365
+flag+box only,color+veg,ridge,LOPO,43,3.303,3.927,-0.007,0.216
+flag+box only,color+veg,ridge,LORO,43,3.356,4.032,-0.061,0.175
+flag+box only,color+veg,ridge,LODO,43,3.667,4.65,-0.411,-0.255
+flag+box only,color+veg,random_forest,LOPO,43,3.238,3.8,0.058,0.237
+flag+box only,color+veg,random_forest,LORO,43,3.09,3.735,0.089,0.309
+flag+box only,color+veg,random_forest,LODO,43,3.615,4.58,-0.369,-0.27
+flag+box only,-,mean_baseline,LOPO,43,3.198,4.008,-0.048,-0.998
+flag+box only,-,mean_baseline,LORO,43,3.262,4.07,-0.081,-0.547
+flag+box only,-,mean_baseline,LODO,43,3.629,4.584,-0.372,-0.334
+flag+box only,all,ridge,LOPO,43,3.257,3.921,-0.004,0.21
+flag+box only,all,ridge,LORO,43,3.42,4.129,-0.113,0.056
+flag+box only,all,ridge,LODO,43,3.67,4.658,-0.416,-0.41
+flag+box only,all,random_forest,LOPO,43,3.291,3.897,0.009,0.21
+flag+box only,all,random_forest,LORO,43,3.441,4.293,-0.203,0.014
+flag+box only,all,random_forest,LODO,43,3.55,4.728,-0.459,-0.338
