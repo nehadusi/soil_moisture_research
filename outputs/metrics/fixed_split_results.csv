@@ -1,0 +1,8 @@
+features,model,val_MAE,test_MAE
+all,ridge,2.33,4.64
+color+veg,random_forest,2.34,4.87
+color+veg,ridge,2.4,4.6
+all,random_forest,2.42,5.09
+exposure_normalised,ridge,2.44,4.63
+-,mean_baseline,2.48,4.64
+exposure_normalised,random_forest,2.52,5.1
