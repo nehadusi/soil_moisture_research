@@ -1,0 +1,21 @@
+# Sensor-log ingestion settings. Paths are relative to the repo root.
+
+# The CSV currently sits at the repo root; data/raw/sensors/ is the intended home.
+sensor_csv: "soil_moisture 1.csv"
+
+# device_name is NOT a unique node id: "alyssa-test-3" was used by two radios
+# (a7b2f1800000e0d0 until 2026-09-09, be1b5bf80000d0fe from 2026-09-17).
+node_key: dev_eui
+
+adc:
+  # ADS1115 16-bit ADC at PGA +/-6.144 V: probe_voltage == adc_raw * 6.144 / 32768.
+  volts_per_count: 0.0001875
+  # Readings below this are a probe that is unpowered / not connected (values 3..~150
+  # seen at session starts). Provisional: confirm with the project owner.
+  min_valid: 200
+  # ADC negative full scale; a read error, not a measurement.
+  error_values: [-32768]
+
+# A break of more than this between ANY two uplinks starts a new field session
+# (the logger only runs while the probes are switched on).
+session_gap_minutes: 120
