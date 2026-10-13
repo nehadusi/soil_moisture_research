@@ -128,6 +128,13 @@ if __name__ == "__main__":
     fig.suptitle("Random forest, all features, shadow-masked: held-out predictions")
     fig.tight_layout(); fig.savefig(out / "figures" / "pred_vs_actual.png", dpi=130)
 
+    # held-out predictions per sighting (each grid row predicted by a model that never saw it);
+    # heatmaps.py uses these for the whole-grid model map
+    hp = ds[["video", "sighting", "device_name", "day", "vwc_pct"]].copy()
+    hp["pred_LORO"] = p[("all", "random_forest", "LORO")]
+    hp["pred_LOPO"] = p[("all", "random_forest", "LOPO")]
+    hp.round(3).to_csv(out / "metrics" / "heldout_predictions.csv", index=False)
+
     # final model on all labelled data + permutation importance (on LORO-held-out folds)
     cols = [c for c in FEATURE_SETS["all"] if c in ds.columns]
     final = models()["random_forest"].fit(ds[cols], ds["vwc_pct"])

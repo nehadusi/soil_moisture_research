@@ -70,7 +70,7 @@ def measured_grid(lab, out, crops=None, root=None, sight=None, froot=None):
     washed and framed in the moisture colour, with the reading on it. One PNG per day."""
     lab = lab[lab["status"] == "ok"].copy()
     lab["day"] = lab["video"].str[:4]
-    S, BORDER, GAP = 300, 12, 10
+    S, GAP = 300, 0          # tiles butt against each other, like an assembled puzzle
     for day, g in lab.groupby("day"):
         vids = [v for v in GRID_ROWS if v.startswith(day) and v in set(g["video"])]
         nr, nc = len(vids), len(ORDER)
@@ -87,14 +87,17 @@ def measured_grid(lab, out, crops=None, root=None, sight=None, froot=None):
                 if tile is None:
                     tile = np.ones((S, S, 3), np.float32) * col
                 else:
-                    tile = tile * 0.62 + col * 0.38                      # wash in the moisture colour
-                tile[:BORDER], tile[-BORDER:], tile[:, :BORDER], tile[:, -BORDER:] = col, col, col, col
+                    tile = tile * 0.58 + col * 0.42                      # wash in the moisture colour
                 y0, x0 = i * (S + GAP), j * (S + GAP)
                 mosaic[y0:y0 + S, x0:x0 + S] = tile
 
         fig_w = 1.55 * nc + 1.9
         fig, ax = plt.subplots(figsize=(fig_w, 1.55 * nr + 1.3))
         ax.imshow(mosaic, extent=(-0.5, nc - 0.5, nr - 0.5, -0.5))
+        for k in range(1, nc):                                     # hairline seams between pieces
+            ax.axvline(k - 0.5, color="white", lw=0.8, alpha=0.6)
+        for k in range(1, nr):
+            ax.axhline(k - 0.5, color="white", lw=0.8, alpha=0.6)
         for i in range(nr):
             for j in range(nc):
                 if np.isnan(vals[i, j]):
@@ -216,6 +219,86 @@ def overlay_figure(img, P, c, valid_px, node_xy, node, truth, node_pred, title, 
     plt.close(fig)
 
 
+def field_heatmap(lab, out, heldout=None, crops=None, root=None, sight=None, froot=None):
+    """One image per flight day covering the whole grid: every row, every probe position.
+    The drone close-ups of all probes are butted together into one seamless mosaic (like a
+    finished jigsaw), and the moisture map is laid over it semi-transparently.
+    Left: sensor readings, smoothly interpolated between probes. Right (when held-out
+    predictions exist): the model's prediction for each probe from a model that never saw
+    that row, interpolated the same way. Rows and probes are drawn evenly spaced."""
+    lab = lab[lab["status"] == "ok"].copy()
+    lab["day"] = lab["video"].str[:4]
+    for day, g in lab.groupby("day"):
+        vids = [v for v in GRID_ROWS if v.startswith(day) and v in set(g["video"])]
+        nr, nc = len(vids), len(ORDER)
+
+        def matrix(df, col):
+            M = np.full((nr, nc), np.nan)
+            for i, v in enumerate(vids):
+                for j, n in enumerate(ORDER):
+                    x = df[(df["video"] == v) & (df["device_name"] == n)][col]
+                    if len(x) and pd.notna(x.iloc[0]):
+                        M[i, j] = x.iloc[0]
+            return M
+
+        panels = [("Measured by the probes", matrix(g, "vwc_pct"), None)]
+        if heldout is not None:
+            h = heldout[heldout["video"].str.startswith(day)]
+            Mp = matrix(h, "pred_LORO")
+            mae = np.nanmean(np.abs(Mp - panels[0][1]))
+            base = np.nanmean(np.abs(panels[0][1] - np.nanmean(panels[0][1])))
+            panels.append(("Model prediction (each row held out)", Mp,
+                           f"error {mae:.1f} pts vs {base:.1f} for guessing this day's average"))
+
+        # seamless photo mosaic: one close-up per probe, tiles touching
+        S = 300
+        mosaic = np.full((nr * S, nc * S, 3), 0.55, np.float32)
+        if crops is not None:
+            for i, v in enumerate(vids):
+                for j, n in enumerate(ORDER):
+                    x = g[(g["video"] == v) & (g["device_name"] == n)]
+                    if len(x):
+                        t = node_tile(crops, root, v, int(x["sighting"].iloc[0]), S, sight=sight, froot=froot)
+                        if t is not None:
+                            mosaic[i * S:(i + 1) * S, j * S:(j + 1) * S] = t
+        ext = (-0.5, nc - 0.5, nr - 0.5, -0.5)
+
+        fig, axes = plt.subplots(1, len(panels), figsize=(5.4 * len(panels) * nc / 5 + 1.4, 1.08 * nr + 2.4), squeeze=False)
+        for ax, (name, M, note) in zip(axes[0], panels):
+            filled = M.copy()
+            for i in range(nr):                       # gaps (no reading/prediction): row average
+                filled[i, np.isnan(filled[i])] = np.nanmean(M[i]) if np.isfinite(M[i]).any() else np.nanmean(M)
+            ax.imshow(mosaic, extent=ext, aspect="equal")
+            ax.imshow(filled, cmap=CMAP, norm=NORM, interpolation="bicubic", aspect="equal", extent=ext, alpha=0.55)
+            for i in range(nr):
+                for j in range(nc):
+                    ok = not np.isnan(M[i, j])
+                    ax.scatter(j, i, s=46, marker="o", facecolor="white" if ok else "none",
+                               edgecolor="white", linewidth=1.4, zorder=3)
+                    ax.text(j, i - 0.27, f"{M[i, j]:.1f}" if ok else "n/a", ha="center", va="center",
+                            fontsize=9.5, weight="bold", color="white",
+                            path_effects=[pe.withStroke(linewidth=2.4, foreground=(0, 0, 0, 0.45))], zorder=4)
+            ax.set_xticks(range(nc), [n.replace("-test", "\ntest") for n in ORDER], fontsize=8.5, color=INK)
+            ax.set_yticks(range(nr), [GRID_ROWS[v] for v in vids], fontsize=9.5, color=INK)
+            ax.tick_params(length=0)
+            for sp in ax.spines.values():
+                sp.set_visible(False)
+            ax.set_title(name, fontsize=11, color=INK, loc="left", weight="bold")
+            if note:
+                ax.text(0, -0.09, note, transform=ax.transAxes, fontsize=8.5, color=MUTED, va="top")
+        fig.suptitle(f"Soil moisture across the whole grid, {day.replace('.', '/')}", x=0.01, ha="left",
+                     fontsize=14, weight="bold", color=INK)
+        fig.text(0.01, 0.905, "VWC %. Drone close-up of every probe, joined into one mosaic, with the moisture map over it. "
+                 "Dots are probes; colour between them is interpolated.", fontsize=9, color=MUTED)
+        fig.subplots_adjust(top=0.84, bottom=0.17, left=0.07, right=0.86, wspace=0.18)
+        cax = fig.add_axes([0.885, 0.17, 0.013, 0.67])
+        cb = fig.colorbar(plt.cm.ScalarMappable(norm=NORM, cmap=CMAP), cax=cax)
+        cb.set_label("VWC %  (drier \u2192 wetter)", color=MUTED); cb.outline.set_visible(False)
+        cb.ax.tick_params(colors=MUTED, length=0)
+        fig.savefig(out / f"field_heatmap_{day.replace('.', '')}.png", dpi=150, facecolor="white")
+        plt.close(fig)
+
+
 if __name__ == "__main__":
     froot, sight, labp, dsp, out = map(Path, sys.argv[1:6])
     crops_csv = Path(sys.argv[6]) if len(sys.argv) > 6 else None        # optional: node close-ups
@@ -223,6 +306,9 @@ if __name__ == "__main__":
     out.mkdir(parents=True, exist_ok=True)
     lab = pd.read_csv(labp); s = pd.read_csv(sight)
     measured_grid(lab, out, pd.read_csv(crops_csv) if crops_csv else None, crops_root, s, froot)
+    hp = Path(dsp).parent.parent / "outputs" / "metrics" / "heldout_predictions.csv"   # written by train.py
+    field_heatmap(lab, out, pd.read_csv(hp) if hp.exists() else None,
+                  pd.read_csv(crops_csv) if crops_csv else None, crops_root, s, froot)
 
     ds = pd.read_csv(dsp); ds = ds[(ds["status"] == "ok") & ds["vwc_pct"].notna()]
     cols = [c for c in T.FEATURE_SETS["all"] if c in ds.columns]
